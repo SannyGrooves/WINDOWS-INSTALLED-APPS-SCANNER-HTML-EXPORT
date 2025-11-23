@@ -14,3 +14,7 @@ HTML EXPORT
 NEW!
 PROGRESS BAR
 <img width="1254" height="95" alt="image" src="https://github.com/user-attachments/assets/9abeec87-70ce-4dfd-b174-40d59ec0ea0d" />
+
+
+FIXES:
+SMART name detection (no more fake 'Python' names)...
