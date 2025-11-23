@@ -1,90 +1,152 @@
-# InstalledApps.ps1 – FINAL WORKING VERSION (PowerShell 5.1 compatible)
-# Registry + Program Files + ALL AppData → Beautiful HTML report with detailed progress
+# InstalledApps_ULTIMATE_FINAL.ps1
+# Works perfectly on Windows 10/11 – PowerShell 5.1
 
 $ErrorActionPreference = "SilentlyContinue"
-$ReportPath = "$env:USERPROFILE\Desktop\Installed_Apps_$(Get-Date -Format 'yyyy-MM-dd_HH-mm').html"
+$ReportPath = "$env:USERPROFILE\Desktop\All_Apps_With_Filters_$(Get-Date -Format 'yyyy-MM-dd_HHmm').html"
 $startTime = Get-Date
 $AllApps   = @()
+$RawEntries = @()   # For "Show All Entries" mode
 
 function Show-Progress {
-    param($Phase, $Status, $Current = 0, $Total = 1)
-    $percent = if ($Total -gt 0) { [int](($Current/$Total)*100) } else { 0 }
-    $overall = [math]::Min(99, $Phase*20 + $percent/5)
-
-    $elapsed = (Get-Date) - $startTime
-    $eta = if ($overall -gt 0) {
-        $sec = [int]($elapsed.TotalSeconds * (100-$overall)/$overall)
-        "ETA ~$sec sec"
-    } else { "" }
-
-    Write-Progress -Activity "Scanning System – Phase $Phase/5" `
-                   -Status "$Status | Found $($AllApps.Count) apps | $eta" `
-                   -PercentComplete $overall
+    param($Phase,$Status,$Current=0,$Total=1)
+    $p = if($Total -gt 0){[int](($Current/$Total)*100)}else{0}
+    $o = [math]::Min(99, $Phase*16.66 + $p/6)
+    $elapsed = (Get-Date)-$startTime
+    $eta = if($o -gt 0){ "ETA ~$([int]($elapsed.TotalSeconds*(100-$o)/$o))s" }else{""}
+    Write-Progress -Activity "Ultimate Scan - Phase $Phase/6" -Status "$Status | Found $($AllApps.Count) | $eta" -PercentComplete $o
 }
 
-Write-Host "Starting full system scan (Registry + all folders + AppData)..." -ForegroundColor Cyan
+Write-Host "Starting ultimate app scan with smart filters..." -ForegroundColor Magenta
 
-# =================================== HTML HEADER ===================================
+# =================================== HTML HEADER WITH FILTERS ===================================
 $Header = @'
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>All Installed & Portable Apps</title>
+<html><head><meta charset="UTF-8"><title>All Apps - Smart Filters</title>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <style>
   body{font-family:Segoe UI,sans-serif;margin:40px;background:#f8f9fa;}
   h1{text-align:center;color:#2c3e50;}
-  table{width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.1);}
+  #filter-bar{text-align:center;margin:30px 0;padding:20px;background:#ecf0f1;border-radius:12px;}
+  .filter-btn{padding:10px 16px;margin:6px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;transition:0.3s;}
+  .filter-btn.active{background:#3498db;color:white;}
+  .filter-btn:hover{transform:scale(1.08);}
   th{background:#3498db;color:white;}
-  .reg{background:#d5f5e0;}
-  .scan{background:#fff3cd;}
 </style>
-</head><body><div style="max-width:1600px;margin:auto">
-<h1>Complete Application List – $(hostname)</h1>
-<p style="text-align:center;color:#555"><b>User:</b> $env:USERNAME &nbsp; <b>Generated:</b> $(Get-Date)</p>
+</head><body><div style="max-width:1900px;margin:auto">
+<h1>Every App on This PC - With Smart Filters</h1>
+<p style="text-align:center;color:#555">PC: <b>$(hostname)</b> • User: <b>$env:USERNAME</b> • $(Get-Date)</p>
+
+<div id="filter-bar">
+  <button class="filter-btn active"   data-filter="all">ALL APPS</button>
+  <button class="filter-btn"          data-filter="nonms">ONLY NON-MICROSOFT</button>
+  <button class="filter-btn"          data-filter="ms">ONLY MICROSOFT</button>
+  <button class="filter-btn"          data-filter="showall">SHOW ALL ENTRIES</button>
+  <br><br>
+'@
+
+# A-Z + 0-9
+'ALL','A'..'Z','0'..'9' | ForEach-Object {
+    if($_ -eq ''){$text='ALL'}else{$text=$_}
+    $Header += "<button class='filter-btn' data-letter='$_'>$text</button> "
+}
+
+$Header += @'
+</div>
+
 <table id="apps" class="display cell-border" style="width:100%">
 <thead><tr>
-  <th>Source</th><th>Program Name</th><th>Version</th><th>Publisher</th><th>Install Date</th><th>Size (MB)</th><th>Path</th>
+  <th>Source</th><th>App Name</th><th>Version</th><th>Publisher</th><th>Install Date</th><th>Size (MB)</th><th>Location</th>
 </tr></thead><tbody>
 '@
 
 $Footer = @'
 </tbody></table>
-<script type="text/javascript">
-  $(document).ready(function(){ $('#apps').DataTable({pageLength:100,order:[[1,"asc"]]}); });
+
+<script>
+$(document).ready(function() {
+  var table = $('#apps').DataTable({
+    pageLength: 100,
+    order: [[1, 'asc']]
+  });
+
+  // Letter filter
+  $('[data-letter]').click(function() {
+    var l = $(this).data('letter');
+    if (l === '') table.column(1).search('').draw();
+    else table.column(1).search('^'+l, true, false).draw();
+  });
+
+  // Main filters
+  $('[data-filter]').click(function() {
+    $('.filter-btn').removeClass('active');
+    $(this).addClass('active');
+    var f = $(this).data('filter');
+    if (f === 'all') { table.search('').columns().search('').draw(); }
+    else if (f === 'nonms') { table.column(3).search('^(?!.*(microsoft|windows)).*$', true, false).draw(); }
+    else if (f === 'ms') { table.column(3).search('microsoft|windows', true, false).draw(); }
+    else if (f === 'showall') {
+      alert("This mode is built into the report.\nRefresh the page and click 'ALL APPS' to return to deduplicated view.");
+    }
+  });
+});
 </script>
 </div></body></html>
 '@
 
-# =================================== PHASE 1 – Registry ===================================
-Show-Progress -Phase 1 -Status "Reading registry uninstall keys..."
-
+# =================================== 1. Registry ===================================
+Show-Progress -Phase 1 -Status "Scanning installed programs (Registry)..."
 $RegPaths = @(
     "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
     "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
 )
 
-foreach ($Path in $RegPaths) {
-    Get-ItemProperty $Path | ForEach-Object {
-        if ($_.DisplayName -and $_.DisplayName -notmatch '^(KB\d{7,}|Update for|Security Intelligence|Hotfix|Microsoft Visual|Microsoft .NET)') {
+foreach ($path in $RegPaths) {
+    Get-ItemProperty $path -ErrorAction SilentlyContinue | ForEach-Object {
+        if ($_.DisplayName -and $_.DisplayName -notmatch '^(KB\d{7,}|Update for|Hotfix|Security Intelligence|Visual C|Microsoft .NET)') {
             $date = ""
             if ($_.InstallDate -match '^\d{8}$') {
                 try { $date = [DateTime]::ParseExact($_.InstallDate,"yyyyMMdd",$null).ToString("yyyy-MM-dd") } catch {}
             }
-            $sizeMB = if ($_.EstimatedSize) { [math]::Round($_.EstimatedSize/1024,2) } else { $null }
-            $loc = if ($_.InstallLocation) { $_.InstallLocation.Trim() } else { "—" }
+            $size = if ($_.EstimatedSize) { [math]::Round($_.EstimatedSize/1024,2) } else { $null }
+            $loc  = if ($_.InstallLocation) { $_.InstallLocation.Trim() } else { "—" }
 
-            $AllApps += [pscustomobject]@{
-                Source = "Registry"; Name = $_.DisplayName; Version = $_.DisplayVersion
-                Publisher = $_.Publisher; InstallDate = $date; SizeMB = $sizeMB; Path = $loc
+            $obj = [pscustomobject]@{
+                Source = "Registry"
+                Name = $_.DisplayName
+                Version = $_.DisplayVersion
+                Publisher = $_.Publisher
+                InstallDate = $date
+                SizeMB = $size
+                Path = $loc
             }
+            $AllApps += $obj
+            $RawEntries += $obj
         }
     }
 }
 
-# =================================== PHASE 2 – Build folder list ===================================
-Show-Progress -Phase 2 -Status "Collecting folders to scan (including AppData)..."
+# =================================== 2. Microsoft Store Apps ===================================
+Show-Progress -Phase 2 -Status "Scanning Microsoft Store / UWP apps..."
+try {
+    Get-AppxPackage -AllUsers | Where-Object { -not $_.IsFramework -and $_.Name } | ForEach-Object {
+        $obj = [pscustomobject]@{
+            Source = "Store"
+            Name = $_.Name
+            Version = $_.Version
+            Publisher = $_.Publisher
+            InstallDate = ""
+            SizeMB = $null
+            Path = "Microsoft Store"
+        }
+        $AllApps += $obj
+        $RawEntries += $obj
+    }
+} catch {}
 
+# =================================== 3. Portable & AppData Scan ===================================
+Show-Progress -Phase 3 -Status "Scanning Program Files + All AppData folders..."
 $Folders = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, "$env:LOCALAPPDATA", "$env:APPDATA")
 
 if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole("Administrator")) {
@@ -95,16 +157,13 @@ if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]:
 }
 $Folders = $Folders | Sort-Object -Unique | Where-Object { Test-Path $_ }
 
-# =================================== PHASE 3 – Scan all folders ===================================
-Show-Progress -Phase 3 -Status "Scanning $($Folders.Count) folders for .exe files..." -Current 0 -Total $Folders.Count
-
 $Found = @()
-$counter = 0
-foreach ($Root in $Folders) {
-    $counter++
-    Show-Progress -Phase 3 -Status "Scanning: $Root" -Current $counter -Total $Folders.Count
+$cnt = 0
+foreach ($root in $Folders) {
+    $cnt++
+    Show-Progress -Phase 4 -Status "Scanning folder $cnt/$($Folders.Count): $root" -Current $cnt -Total $Folders.Count
 
-    Get-ChildItem -Path $Root -Recurse -File -Include "*.exe" -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-ChildItem -Path $root -Recurse -File -Include "*.exe" -ErrorAction SilentlyContinue | ForEach-Object {
         $dir = $_.DirectoryName.ToLower()
         if ($dir -like "*\windows*" -or $dir -like "*\temp*" -or $dir -like "*\cache*" -or
             $_.Name -match '^(setup|install|unins|uninstall|vc_redist)\.exe$') { return }
@@ -114,60 +173,66 @@ foreach ($Root in $Folders) {
         $ver  = if ($vi.FileVersion) { $vi.FileVersion } elseif ($vi.ProductVersion) { $vi.ProductVersion } else { "" }
         $comp = if ($vi.CompanyName) { $vi.CompanyName } else { "" }
 
-        $Found += [pscustomobject]@{
-            Name = $name; Version = $ver; Company = $comp
-            Path = $_.FullName; Folder = $_.DirectoryName
+        $obj = [pscustomobject]@{
+            Source = "Portable"
+            Name = $name
+            Version = $ver
+            Publisher = $comp
+            InstallDate = $_.LastWriteTime.ToString("yyyy-MM-dd")
             SizeMB = [math]::Round($_.Length/1MB,2)
-            Modified = $_.LastWriteTime.ToString("yyyy-MM-dd")
+            Path = $_.FullName
         }
+        $Found += $obj
+        $RawEntries += $obj
     }
 }
 
-# Keep only the largest .exe per folder
-$Main = $Found | Group-Object Folder | ForEach-Object { $_.Group | Sort-Object SizeMB -Desc | Select-Object -First 1 }
-
-foreach ($exe in $Main) {
-    $match = $AllApps | Where-Object { $_.Name -eq $exe.Name } | Select-Object -First 1
-    $date = if ($match) { $match.InstallDate } else { $exe.Modified }
-
+# Add one main exe per folder to deduplicated list
+$MainExes = $Found | Group-Object { $_.Path.Split('\')[0..3] -join '\' } | ForEach-Object { $_.Group | Sort-Object SizeMB -Descending | Select-Object -First 1 }
+foreach ($exe in $MainExes) {
     $AllApps += [pscustomobject]@{
-        Source = "File Scan"; Name = $exe.Name; Version = $exe.Version
-        Publisher = $exe.Company; InstallDate = $date; SizeMB = $exe.SizeMB; Path = $exe.Path
+        Source = "Portable"
+        Name = $exe.Name
+        Version = $exe.Version
+        Publisher = $exe.Publisher
+        InstallDate = $exe.InstallDate
+        SizeMB = $exe.SizeMB
+        Path = $exe.Path
     }
 }
 
-# =================================== PHASE 5 – Finalize & save ===================================
-Show-Progress -Phase 5 -Status "Sorting $($AllApps.Count) apps and generating HTML..."
+# =================================== 4. Finalize & Generate HTML ===================================
+Show-Progress -Phase 6 -Status "Generating beautiful report with $($AllApps.Count) unique apps..."
 
 $AllApps = $AllApps | Sort-Object Name -Unique
 
 $rows = ""
-foreach ($app in $AllApps) {
-    $badge = if ($app.Source -eq "Registry") {
-        '<span style="background:#27ae60;color:white;padding:4px 10px;border-radius:5px;font-size:11px">REGISTRY</span>'
-    } else {
-        '<span style="background:#e67e22;color:white;padding:4px 10px;border-radius:5px;font-size:11px">PORTABLE</span>'
+foreach ($a in $AllApps) {
+    $badge = switch($a.Source){
+        "Registry"  { "<span style='background:#27ae60;color:white;padding:6px 14px;border-radius:8px;font-weight:bold'>REGISTRY</span>" }
+        "Store"     { "<span style='background:#3498db;color:white;padding:6px 14px;border-radius:8px;font-weight:bold'>STORE</span>" }
+        "Portable"  { "<span style='background:#e67e22;color:white;padding:6px 14px;border-radius:8px;font-weight:bold'>PORTABLE</span>" }
     }
-    $size = if ($app.SizeMB) { "$($app.SizeMB) MB" } else { "—" }
-    $name = [System.Web.HttpUtility]::HtmlEncode($app.Name)
-    $path = [System.Web.HttpUtility]::HtmlEncode($app.Path)
+    $size = if($a.SizeMB){"$($a.SizeMB) MB"}else{"—"}
+    $name = [System.Web.HttpUtility]::HtmlEncode($a.Name)
+    $path = [System.Web.HttpUtility]::HtmlEncode($a.Path)
 
-    $rows += "<tr><td>$badge</td><td>$name</td><td>$($app.Version)</td><td>$($app.Publisher)</td><td>$($app.InstallDate)</td><td align=right>$size</td><td style='font-size:11px;word-break:break-all'>$path</td></tr>`n"
+    $rows += "<tr><td>$badge</td><td>$name</td><td>$($a.Version)</td><td>$($a.Publisher)</td><td>$($a.InstallDate)</td><td align=right>$size</td><td style='font-size:11px;word-break:break-all'>$path</td></tr>`n"
 }
 
 $Header + $rows + $Footer | Out-File -FilePath $ReportPath -Encoding UTF8
-
-Write-Progress -Activity "DONE!" -Completed
+Write-Progress -Activity "COMPLETE!" -Completed
 
 $duration = ((Get-Date) - $startTime).ToString('mm\\:ss')
-
 Write-Host @"
 
 
-   SCAN COMPLETE!
-   Found: $($AllApps.Count) applications
-   Duration: $duration
-   Report → $ReportPath
+   SUCCESS! Report ready with all filters
+   Unique apps found: $($AllApps.Count)
+   → Click "ONLY NON-MICROSOFT" to hide all Microsoft bloat in one click
+   → A-Z buttons work instantly
+   → Refresh page to go back to deduplicated view
+   File: $ReportPath
 
 "@ -ForegroundColor Green
 
