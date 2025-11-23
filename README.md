@@ -4,6 +4,7 @@ PowerShell 5.1-compatible version witH:
 -“Only Non-Microsoft” button (NEW!)
 -“Show All Entries” (no deduplication) (NEW!)
 -Registry + Portable + AppData + Microsoft Store apps (NEW!)
+- EXPORT AS CSV TO DESKTOP (NEW)
 
 OPEN WITH POWERSHELL 5.1
 
