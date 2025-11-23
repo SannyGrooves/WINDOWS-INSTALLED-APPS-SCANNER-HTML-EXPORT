@@ -9,7 +9,7 @@ PowerShell 5.1-compatible version witH:
 - OPEN WITH POWERSHELL 5.1
 <img width="714" height="176" alt="image" src="https://github.com/user-attachments/assets/0fcecbe3-d799-4773-ae8e-e059e80ff099" />
 - HTML EXPORT
-<img width="1607" height="782" alt="image" src="https://github.com/user-attachments/assets/a69a8148-3716-4649-9af1-386993de4b77" />
+<img width="1670" height="842" alt="image" src="https://github.com/user-attachments/assets/d18cac64-a413-4622-b93f-9fea67fa5c90" />
 
 
 NEW!
