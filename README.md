@@ -4,7 +4,7 @@ PowerShell 5.1-compatible version witH:
 -“Only Non-Microsoft” button (NEW!)
 -“Show All Entries” (no deduplication) (NEW!)
 -Registry + Portable + AppData + Microsoft Store apps (NEW!)
-<img width="1613" height="648" alt="image" src="https://github.com/user-attachments/assets/b0543c70-c218-41de-bdb4-3718651de9b4" />
+<img width="1597" height="984" alt="image" src="https://github.com/user-attachments/assets/85d71709-6c6d-4fee-9e5b-8f629b02ecf3" />
 
 NEW!
 PROGRESS BAR
