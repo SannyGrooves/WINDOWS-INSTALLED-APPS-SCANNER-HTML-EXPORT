@@ -10,7 +10,7 @@ OPEN WITH POWERSHELL 5.1
 
 <img width="714" height="176" alt="image" src="https://github.com/user-attachments/assets/0fcecbe3-d799-4773-ae8e-e059e80ff099" />
 HTML EXPORT
-<img width="1597" height="984" alt="image" src="https://github.com/user-attachments/assets/85d71709-6c6d-4fee-9e5b-8f629b02ecf3" />
+<img width="1614" height="877" alt="image" src="https://github.com/user-attachments/assets/2cb3c928-81f7-494d-8e9f-5c00806b5ce6" />
 
 NEW!
 PROGRESS BAR
