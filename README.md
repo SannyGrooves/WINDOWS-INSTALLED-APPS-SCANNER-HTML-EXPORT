@@ -3,8 +3,12 @@
 A PowerShell 5.1-compatible tool that scans your PC for installed software and shows the results in a dark-blue HTML report, with a CSV export.
 
 ## How to run
+1. copy the InstalledAppsScanner.ps1 to c:/
+2. use  LaunchInstalledAppsScan.ps1 to run
+* Launchinstalledappscan.ps1 uses this code: 
+powershell.exe -NoExit -ExecutionPolicy Bypass -File "C:\InstalledAppsScanner.ps1"
 
-Open with **PowerShell 5.1**.
+Open with **PowerShell 7.6**.
 
 <img width="714" height="176" alt="Open with PowerShell 5.1" src="https://github.com/user-attachments/assets/0fcecbe3-d799-4773-ae8e-e059e80ff099" />
 
