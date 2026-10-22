@@ -72,3 +72,5 @@ When the scan finishes, the HTML report opens automatically. Both files are save
 
 - Scanning Program Files, LocalAppData and AppData for `.exe` files can take several minutes. A progress bar shows where it is.
 - The Excel (`.xlsx`) export was removed. Use the CSV instead.
+Virus total scanned! because made with AI..
+https://www.virustotal.com/gui/file/13598e8023e9e66c2a24297607070d566621409612ce0d7b11a9cbf6eff63098
