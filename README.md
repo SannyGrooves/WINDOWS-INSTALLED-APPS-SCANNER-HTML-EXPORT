@@ -6,8 +6,9 @@ A PowerShell tool that scans your PC for installed software and shows the result
 
 1. Copy `InstalledAppsScanner.ps1` and `LaunchInstalledAppsScan.ps1` to `C:\`.
 2. Right click on the .ps1 file and un-check 'block file'
-<img width="400" height="263" alt="image" src="https://github.com/user-attachments/assets/5d9290a8-114b-4a75-8471-a686b75cc4b2" /> 
-2.1: Run powershell command:
+<img width="400" height="263" alt="image" src="https://github.com/user-attachments/assets/5d9290a8-114b-4a75-8471-a686b75cc4b2" />
+
+2.1 Run powershell command
 ```powershell
 Unblock-File C:\LaunchInstalledAppsScan.ps1
 Unblock-File C:\InstalledAppsScanner.ps1
